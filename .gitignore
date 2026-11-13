@@ -1,0 +1,25 @@
+# Android / Gradle
+*.iml
+.gradle/
+local.properties
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Keystores (never commit signing keys)
+*.keystore
+*.jks
+release.keystore
+
+# Node / web
+node_modules/
+web/dist/
+web/dist-ssr/
+*.local
+
+# OS
+.DS_Store
+Thumbs.db

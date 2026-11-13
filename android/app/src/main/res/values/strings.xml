@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReelFlow 500</string>
+    <!-- Meta App ID for Facebook Login ("Rahim Automation Agent" on
+         developers.facebook.com, owned by the Joshi Azlewod account).
+         Same Meta app as the original ReelFlow Studio. -->
+    <string name="facebook_app_id">1138116601998610</string>
+    <string name="facebook_client_token"></string>
+</resources>
