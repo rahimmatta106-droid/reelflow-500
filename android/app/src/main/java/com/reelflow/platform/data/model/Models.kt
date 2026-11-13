@@ -93,6 +93,14 @@ data class PublishRecord(
     val initialReach: Int = 0
 )
 
+/** WhatsApp review-notification delivery state for one job. */
+data class WhatsAppReviewState(
+    val sent: Boolean = false,
+    val sentTimestamp: Long = 0L,
+    val status: String = "Not Sent", // Not Sent, Pending, Delivered, Read
+    val reviewerComment: String = ""
+)
+
 data class GalleryMediaItem(
     val id: String = UUID.randomUUID().toString(),
     val filename: String,
