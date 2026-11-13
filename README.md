@@ -103,14 +103,13 @@ builds only when the repo has these secrets:
 `RELEASE_KEYSTORE_BASE64`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`,
 `RELEASE_KEY_PASSWORD`.
 
-### Android (local, best effort)
-```bash
-cd android
-export JAVA_HOME=~/workspace/jdk17/jdk-17.0.11+9
-./gradlew :app:assembleDebug --no-daemon
-```
-Note: the VM has ~500 MB free RAM; a local Gradle build may OOM. Use the
-GitHub Actions route if it does.
+### Android (local — does NOT work on this dev VM)
+Local Gradle builds are **blocked on this VM by the sandbox**: Java TCP
+connections are intercepted (the runtime injects a policy notice into Java
+socket streams and closes them), so Gradle's daemon IPC over localhost
+fails ("Could not receive a message from the daemon") and dependency
+downloads fail ("Connection reset"). curl works, Java does not. Use the
+GitHub Actions route below instead.
 
 ## Still needed (not in this repo)
 
