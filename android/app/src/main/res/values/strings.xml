@@ -5,5 +5,5 @@
          developers.facebook.com, owned by the Joshi Azlewod account).
          Same Meta app as the original ReelFlow Studio. -->
     <string name="facebook_app_id">1138116601998610</string>
-    <string name="facebook_client_token"></string>
+    <string name="facebook_client_token">bb564f88aaf65ce1647eda0e1b1d01d2</string>
 </resources>
