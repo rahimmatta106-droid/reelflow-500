@@ -12,7 +12,11 @@ import com.facebook.GraphRequest
 import com.facebook.login.LoginBehavior
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import java.net.URL
+import java.net.URLEncoder
 import java.util.Date
+import javax.net.ssl.HttpsURLConnection
+import org.json.JSONObject
 
 /**
  * Facebook Login for ReelFlow Studio — the easy way to connect real pages.
@@ -138,29 +142,83 @@ class FacebookLoginHelper(
         try {
             // Defensive init: Graph calls also require an initialized SDK.
             FacebookSdk.sdkInitialize(activity.applicationContext)
-            // The server validates the token string; the local userId is
-            // filled in by the /me call that follows.
-            val token = AccessToken(
-                cleaned,
-                appId,
-                "",
-                PERMISSIONS,
-                null,
-                null,
-                AccessTokenSource.FACEBOOK_APPLICATION_WEB,
-                Date(System.currentTimeMillis() + 24L * 60L * 60L * 1000L),
-                Date(),
-                null
-            )
-            AccessToken.setCurrentAccessToken(token)
-            fetchAccountAndPages()
         } catch (e: Exception) {
             onResult(
                 FbLoginResult.Error(
-                    "Token login failed: ${e.message ?: e.javaClass.simpleName}"
+                    "SDK start failed: ${e.message ?: e.javaClass.simpleName}"
                 )
             )
+            return
         }
+        // FIX (2026-11-18): the Facebook SDK's AccessToken constructor
+        // rejects an empty userId ("Argument 'userId' cannot be empty"), so
+        // the old code failed BEFORE any network call, for every token —
+        // fresh or expired. First resolve the real user id with a plain
+        // Graph API call (no SDK object needed), then build the AccessToken
+        // with that id. A bad/expired token now also reports Facebook's
+        // real error instead of the misleading userId message.
+        Thread {
+            try {
+                val url = URL(
+                    "https://graph.facebook.com/me?fields=id,name&access_token=" +
+                        URLEncoder.encode(cleaned, "UTF-8")
+                )
+                val conn = url.openConnection() as HttpsURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 15000
+                conn.readTimeout = 15000
+                val stream = if (conn.responseCode in 200..299) {
+                    conn.inputStream
+                } else {
+                    conn.errorStream
+                }
+                val body = stream?.bufferedReader()?.use { it.readText() } ?: ""
+                val json = JSONObject(body)
+                if (json.has("error")) {
+                    val msg = json.getJSONObject("error")
+                        .optString("message", "Token ghalat ya expire ho gaya hai.")
+                    activity.runOnUiThread {
+                        onResult(FbLoginResult.Error("Token login failed: $msg"))
+                    }
+                    return@Thread
+                }
+                val userId = json.optString("id", "")
+                if (userId.isBlank()) {
+                    activity.runOnUiThread {
+                        onResult(
+                            FbLoginResult.Error(
+                                "Token login failed: Facebook ne user id nahi diya."
+                            )
+                        )
+                    }
+                    return@Thread
+                }
+                val token = AccessToken(
+                    cleaned,
+                    appId,
+                    userId,
+                    PERMISSIONS,
+                    null,
+                    null,
+                    AccessTokenSource.FACEBOOK_APPLICATION_WEB,
+                    Date(System.currentTimeMillis() + 24L * 60L * 60L * 1000L),
+                    Date(),
+                    null
+                )
+                activity.runOnUiThread {
+                    AccessToken.setCurrentAccessToken(token)
+                    fetchAccountAndPages()
+                }
+            } catch (e: Exception) {
+                activity.runOnUiThread {
+                    onResult(
+                        FbLoginResult.Error(
+                            "Token login failed: ${e.message ?: e.javaClass.simpleName}"
+                        )
+                    )
+                }
+            }
+        }.start()
     }
 
     fun logout() {
